@@ -30,6 +30,6 @@ setup(
     long_description=readme,
     requires=['tornadio'],
     install_requires=[
-        'tornado >= 0.0.4'
+        'tornadio >= 0.0.4'
     ]
 )
