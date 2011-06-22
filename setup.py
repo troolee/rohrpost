@@ -22,7 +22,7 @@ setup(
     version='0.0.1',
     author='Pavel Reznikov',
     author_email='pashka.reznikov@gmail.com',
-    packages=['rohrpost'],
+    packages=['rohrpost', 'rohrpost.channels'],
     scripts=[],
     url='https://github.com/troolee/rohrpost',
     license=license,
