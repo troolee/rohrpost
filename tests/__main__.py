@@ -9,6 +9,7 @@ import logging
 import unittest2 as unittest
 
 from basics import *
+from filter import *
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)

@@ -61,9 +61,10 @@ class Channel(object):
     def say(self, msg, filter=None):
         @async
         def do_say():
+            logger.debug('say %s to %s in %s', msg, filter if filter else 'ALL', self.name)
             for c in self._clients:
                 if c.test(filter):
-                    c.say(self, msg)
+                    c.say(msg)
         do_say.call_async()
 
     def add_handler(self, msg_id, handler):
@@ -104,7 +105,9 @@ class AbstractClient(object):
         self._tester = {}
 
         for k, v in self._ident.items():
-            self._tester[k] = lambda x: x == v
+            def add_tester(k, v):
+                self._tester[k] = lambda x: x == v
+            add_tester(k, v)
 
     def test(self, filter):
         if filter is not None:
@@ -120,6 +123,7 @@ class AbstractClient(object):
     def say(self, msg):
         if isinstance(msg, (list, tuple)):
             msg = OutgoingMessage(*msg)
+        assert(isinstance(msg, OutgoingMessage))
         self.post_message(msg)
 
     def post_message(self, msg):
@@ -141,6 +145,7 @@ class IncomeMessage(object):
         return self._data
 
     def reply(self, msg, filter=None):
+        logger.debug('reply %s on %s', msg, self.name)
         if self._sender and self._sender.test(filter):
             self._sender.say(msg)
 
