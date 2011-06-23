@@ -5,15 +5,17 @@
 #
 # Id: $Id$
 
-from os import path as op
 import logging
 
+import os
 import tornado
 import tornado.websocket
-from tornado import httpserver, ioloop
+from tornado import httpserver, ioloop, web
 
 from rohrpost import make_router
 from rohrpost.channels.tornadoweb import rohrpost_route
+
+logging.getLogger().setLevel(logging.DEBUG)
 
 
 router = make_router({
@@ -28,17 +30,17 @@ class IndexHandler(tornado.web.RequestHandler):
     def get(self, *args, **kwargs):
         self.render("index.html")
 
+ROOT = os.path.abspath(os.path.dirname(__file__))
+
 application = tornado.web.Application(
     [
             (r"/", IndexHandler),
+            (r'/(.*\.js)', web.StaticFileHandler, {"path": ROOT}),
             rohrpost_route(r'/ws', router, ['chat']),
     ]
 )
 
 if __name__ == "__main__":
-    import logging
-    logging.getLogger().setLevel(logging.DEBUG)
-
     http_server = httpserver.HTTPServer(application)
     http_server.listen(8001)
     ioloop.IOLoop.instance().start()

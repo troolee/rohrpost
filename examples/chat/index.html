@@ -3,17 +3,79 @@
 <head>
     <title></title>
     <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script src="/jquery.json.js"></script>
     <script type="text/javascript">
     window.onload = function() {
+        (function () {
+            Rohrpost = function (opts) {
+                var settings = {
+                    url: opts.url,
+                    channel: opts.channel,
+                    ident: opts.ident || {},
+                    on_open: opts.on_open || function () {},
+                    on_close: opts.on_close || function () {}
+                };
 
-        var ws = new WebSocket('ws://localhost:8001/ws/chat?ident=%7B%22id%22%3A%22user1%22%2C%22param1%22%3A%22foo1%22%7D');
+                if (typeof(opts.handler) == 'function') {
+                    settings.handler = opts.handler;
+                }
+                else if (typeof(opts.handler) == 'object') {
+                    settings.handler = function (msg) {
+                        var hh = [msg.name, '*'];
+                        for (var i = 0; i < hh.length; ++i) {
+                            (opts.handler[hh[i]] || function () {})(msg);
+                        }
+                    }
+                }
+                else {
+                    settings.handler = function () {};
+                }
 
-        ws.onmessage = function (msg) {
-            console.log(msg);
-        }
+                if (!/\/$/.exec(settings.url)) {
+                    settings.url += '/';
+                }
+                var url = settings.url + settings.channel;
+                this._ws = new WebSocket(url + '?ident=' + encodeURIComponent($.toJSON(settings.ident)));
+
+                this._ws.onmessage = function (e) {
+                    var data = $.secureEvalJSON(e.data);
+                    settings.handler(data);
+                }
+
+                this._ws.onopen = settings.on_open;
+                this._ws.onclose = settings.on_close;
+
+                var that = this;
+
+                /* Public methods */
+
+                this.send = function (name, data) {
+                    var packet = {name: name, data: data};
+                    that._ws.send($.toJSON(packet));
+                }
+            }
+        }());
+
+        var rohrpost = new Rohrpost({
+            url: 'ws://localhost:8001/ws',
+            channel: 'chat',
+            ident: {id: 'user1', param1: 'foobar'},
+            handler: {
+                message: function (msg) {
+                    console.log(['"message"', msg]);
+                },
+                '*': function (msg) {
+                    console.log(['"*"', msg]);
+                }
+            },
+            on_close: function () {
+                alert('Connection lost.');
+                window.location = window.location;
+            }
+        });
 
         onclick = function () {
-            ws.send('{"name": "message", "data": {"text": "hello"}}');
+            rohrpost.send('message', {text: 'hello'});
         }
     };
     </script>
