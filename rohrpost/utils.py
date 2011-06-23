@@ -15,4 +15,3 @@ def async(func):
         Thread(target=func, args=args, kwargs=kwargs).start()
     func.call_async = call_async
     return func
-

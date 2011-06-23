@@ -2,8 +2,23 @@
 <html>
 <head>
     <title></title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+    <script type="text/javascript">
+    window.onload = function() {
+
+        var ws = new WebSocket('ws://localhost:8001/ws/chat?ident=%7B%22id%22%3A%22user1%22%2C%22param1%22%3A%22foo1%22%7D');
+
+        ws.onmessage = function (msg) {
+            console.log(msg);
+        }
+
+        onclick = function () {
+            ws.send('{"name": "message", "data": {"text": "hello"}}');
+        }
+    };
+    </script>
 </head>
 <body>
-
+    <button onclick="onclick">Click</button>
 </body>
 </html>

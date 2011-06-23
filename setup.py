@@ -28,8 +28,7 @@ setup(
     license=license,
     description='',
     long_description=readme,
-    requires=['tornadio', 'unittest2'],
+    requires=['tornado', 'unittest2'],
     install_requires=[
-        'tornadio >= 0.0.4'
     ]
 )

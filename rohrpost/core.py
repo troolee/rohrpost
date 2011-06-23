@@ -109,6 +109,10 @@ class AbstractClient(object):
                 self._tester[k] = lambda x: x == v
             add_tester(k, v)
 
+    @property
+    def ident(self):
+        return self._ident
+
     def test(self, filter):
         if filter is not None:
             if callable(filter):

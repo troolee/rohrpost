@@ -7,14 +7,14 @@
 
 import json
 from os import path as op
+import logging
 
-import tornado.web
-import tornadio
-import tornadio.router
-import tornadio.server
+import tornado
+import tornado.websocket
+from tornado import httpserver, ioloop
 
 from rohrpost import make_router
-from rohrpost.channels.tornadio import TornadioClient
+from rohrpost.channels.tornadoweb import TornadoClient, RohrpostTornadoConnection, make_tornado_routes
 from rohrpost.core import IncomeMessage
 
 
@@ -40,45 +40,23 @@ router = make_router({
     }
 })
 
-
-class ChatConnection(tornadio.SocketConnection):
-    def on_open(self, *args, **kwargs):
-        ident = {}
-        self.client = TornadioClient(ident, self)
-        router.get_channel('chat').connect(self.client)
-
-    def on_close(self):
-        router.get_channel('chat').disconnect(self.client)
-
-    def on_message(self, message):
-        message = json.loads(message)
-        msg = IncomeMessage(message['name'], message['data'], sender=self.client)
-        router.process_message('chat', msg)
-
-        
-ChatRouter = tornadio.get_router(ChatConnection)
-
-
 class IndexHandler(tornado.web.RequestHandler):
     """Regular HTTP handler to serve the chatroom page"""
-    def get(self):
+    def get(self, *args, **kwargs):
         self.render("index.html")
 
 ROOT = op.normpath(op.dirname(__file__))
 
 application = tornado.web.Application(
-    [(r"/", IndexHandler), ChatRouter.route()],
-    enabled_protocols = ['websocket',
-                         'flashsocket',
-                         'xhr-multipart',
-                         'xhr-polling'],
-    flash_policy_port = 843,
-    flash_policy_file = op.join(ROOT, 'flashpolicy.xml'),
-    socket_io_port = 8001
+    [
+            (r"/", IndexHandler),
+    ] + make_tornado_routes(r'/ws', router, ['chat'])
 )
 
 if __name__ == "__main__":
     import logging
     logging.getLogger().setLevel(logging.DEBUG)
 
-    tornadio.server.SocketServer(application)
+    http_server = httpserver.HTTPServer(application)
+    http_server.listen(8001)
+    ioloop.IOLoop.instance().start()
