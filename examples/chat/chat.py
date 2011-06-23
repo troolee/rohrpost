@@ -14,7 +14,7 @@ import tornado.websocket
 from tornado import httpserver, ioloop
 
 from rohrpost import make_router
-from rohrpost.channels.tornadoweb import TornadoClient, RohrpostTornadoConnection, make_tornado_routes
+from rohrpost.channels.tornadoweb import TornadoClient, RohrpostTornadoConnection, rohrpost_route
 from rohrpost.core import IncomeMessage
 
 
@@ -33,10 +33,15 @@ def on_direct_message(router, channel, msg):
     channel.say(('dm', {'text': text}), {'login': to})
 
 
+def on_def_message(router, channel, msg):
+    logging.debug('default handler on %s::%s %s', channel.name, msg.name, msg.data)
+
+
 router = make_router({
     'chat': {
         'message': on_message,
         'dm': on_direct_message,
+        '*': on_def_message,
     }
 })
 
@@ -50,7 +55,8 @@ ROOT = op.normpath(op.dirname(__file__))
 application = tornado.web.Application(
     [
             (r"/", IndexHandler),
-    ] + make_tornado_routes(r'/ws', router, ['chat'])
+            rohrpost_route(r'/ws', router, ['chat']),
+    ]
 )
 
 if __name__ == "__main__":

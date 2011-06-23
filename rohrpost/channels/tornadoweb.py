@@ -29,20 +29,21 @@ class TornadoClient(AbstractClient):
 
 
 class RohrpostTornadoConnection(websocket.WebSocketHandler):
-    def initialize(self, router, channel):
-        self.router = router
-        self.channel = channel
-        self.ident = {}
+    def initialize(self, **kwargs):
+        self.router = kwargs.pop('router')
 
-        ident = self.request.arguments.get('ident')
+    def open(self, channel, *args, **kwargs):
         try:
-            if ident:
-                self.ident = json.loads(ident[0])
-        except Exception:
-            logger.warn('bad identification: %s', ident)
+            ident = self.request.arguments.get('ident')
+            self.ident = json.loads(ident[0]) if ident else {}
 
-    def open(self, *args, **kwargs):
-        logger.debug('client %s connected', self.ident)
+            logger.debug('client %s connected to %s', self.ident, channel)
+        except Exception:
+            logger.warn('bad identification %s. disconnect', ident)
+            self.close()
+            return
+
+        self.channel = channel
         self.client = TornadoClient(self.ident, self)
         self.router.get_channel(self.channel).connect(self.client)
 
@@ -57,12 +58,12 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
         self.router.process_message(self.channel, msg)
 
     def on_close(self):
-        logger.debug('client %s disconnected', self.client.ident)
+        logger.debug('client %s disconnected from %s', self.client.ident, self.channel)
         self.router.get_channel('chat').disconnect(self.client)
 
 
-def make_tornado_routes(prefix, router, channels):
-    res = []
-    for channel in channels:
-        res.append(('/'.join([prefix, channel]), RohrpostTornadoConnection, {'router': router, 'channel': channel}))
-    return res
+def rohrpost_route(prefix, router, channels):
+    if prefix and prefix != '/':
+        prefix += '/'
+    prefix += '(' + '|'.join(channels) + ')'
+    return prefix, RohrpostTornadoConnection, {'router': router}
