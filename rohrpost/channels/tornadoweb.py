@@ -59,11 +59,11 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
 
     def on_close(self):
         logger.debug('client %s disconnected from %s', self.client.ident, self.channel)
-        self.router.get_channel('chat').disconnect(self.client)
+        self.router.get_channel(self.channel).disconnect(self.client)
 
 
-def rohrpost_route(prefix, router, channels):
+def rohrpost_route(prefix, router, channels, client_class=TornadoClient, extra={}):
     if prefix and prefix != '/':
         prefix += '/'
     prefix += '(' + '|'.join(channels) + ')'
-    return prefix, RohrpostTornadoConnection, {'router': router}
+    return prefix, RohrpostTornadoConnection, {'router': router, 'client_class': client_class, 'extra': extra}
