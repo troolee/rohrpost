@@ -27,10 +27,15 @@ class TornadoClient(AbstractClient):
     def _post_to_socket(self, msg):
         self.connection.write_message(msg)
 
+    def test_connection(self):
+        return True
+
 
 class RohrpostTornadoConnection(websocket.WebSocketHandler):
     def initialize(self, **kwargs):
         self.router = kwargs.pop('router')
+        self.client_class = kwargs.pop('client_class')
+        self.extra = kwargs.pop('extra')
 
     def open(self, channel, *args, **kwargs):
         try:
@@ -44,8 +49,10 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
             return
 
         self.channel = channel
-        self.client = TornadoClient(self.ident, self)
+        self.client = self.client_class(self.ident, self, **self.extra)
         self.router.get_channel(self.channel).connect(self.client)
+        if not self.client.test_connection():
+            self.close()
 
     def on_message(self, message):
         try:
