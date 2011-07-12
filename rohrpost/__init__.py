@@ -17,7 +17,7 @@ def get_callable(handler):
         return handler
     assert isinstance(handler, basestring)
     parts = handler.split('.')
-    module = __import__('.'.join(parts[:-1]))
+    module = __import__('.'.join(parts[:-1]), fromlist=['.'.join(parts[:-1])])
     func = getattr(module, parts[-1])
     return func
 
