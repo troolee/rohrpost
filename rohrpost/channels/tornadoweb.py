@@ -36,13 +36,12 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
         self.router = kwargs.pop('router')
         self.client_class = kwargs.pop('client_class')
         self.extra = kwargs.pop('extra')
+        self.client = None
 
     def open(self, channel, *args, **kwargs):
         try:
             ident = self.request.arguments.get('ident')
             self.ident = json.loads(ident[0]) if ident else {}
-
-            logger.debug('client %s connected to %s', self.ident, channel)
         except Exception:
             logger.warn('bad identification %s. disconnect', ident)
             self.close()
@@ -52,7 +51,10 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
         self.client = self.client_class(self.ident, self, **self.extra)
         self.router.get_channel(self.channel).connect(self.client)
         if not self.client.test_connection():
+            logger.debug('connection test for client %s failed', self.ident)
             self.close()
+        else:
+            logger.debug('client %s connected to %s', self.ident, channel)
 
     def on_message(self, message):
         try:
@@ -65,8 +67,9 @@ class RohrpostTornadoConnection(websocket.WebSocketHandler):
         self.router.process_message(self.channel, msg)
 
     def on_close(self):
-        logger.debug('client %s disconnected from %s', self.client.ident, self.channel)
-        self.router.get_channel(self.channel).disconnect(self.client)
+        if self.client:
+            logger.debug('client %s disconnected from %s', self.client.ident, self.channel)
+            self.router.get_channel(self.channel).disconnect(self.client)
 
 
 def rohrpost_route(prefix, router, channels, client_class=TornadoClient, extra={}):

@@ -102,6 +102,9 @@ class Channel(object):
 class AbstractClient(object):
     def __init__(self, ident):
         self._ident = ident
+        self.reindent()
+
+    def reindent(self):
         self._tester = {}
 
         for k, v in self._ident.items():
@@ -147,6 +150,10 @@ class IncomeMessage(object):
     @property
     def data(self):
         return self._data
+
+    @property
+    def sender(self):
+        return self._sender
 
     def reply(self, msg, filter=None):
         logger.debug('reply %s on %s', msg, self.name)
