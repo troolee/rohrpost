@@ -16,12 +16,13 @@ logger = logging.getLogger('rohrpost')
 
 
 class TornadoClient(AbstractClient):
-    def __init__(self, ident, connection):
+    def __init__(self, ident, connection, encoder=None):
         super(TornadoClient, self).__init__(ident)
         self.connection = connection
+        self.encoder = encoder
 
     def post_message(self, msg):
-        msg_dump = json.dumps({'name': msg.name, 'data': msg.data})
+        msg_dump = json.dumps({'name': msg.name, 'data': msg.data}, cls=self.encoder)
         ioloop.IOLoop.instance().add_callback(self.connection.async_callback(self._post_to_socket, msg_dump))
 
     def _post_to_socket(self, msg):
